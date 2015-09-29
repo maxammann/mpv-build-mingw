@@ -21,7 +21,8 @@ ExternalProject_Add(mpv
         rubberband
         uchardet
         winpthreads
-    GIT_REPOSITORY git://github.com/mpv-player/mpv.git
+    SOURCE_DIR "${CMAKE_SOURCE_DIR}/mpv/"
+    BINARY_DIR "${CMAKE_SOURCE_DIR}/mpv-build/"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ${EXEC}
         PKG_CONFIG=pkg-config
@@ -29,8 +30,11 @@ ExternalProject_Add(mpv
         DEST_OS=win32
         ${MPV_LDFLAGS}
         <SOURCE_DIR>/waf configure
+        --top=<SOURCE_DIR>
+        --out=<BINARY_DIR>
         --enable-static-build
-        --enable-pdf-build
+        --disable-optimize
+        #--enable-pdf-build
         --disable-manpage-build
         --disable-debug-build
         --enable-libmpv-shared
@@ -46,16 +50,15 @@ ExternalProject_Add(mpv
         --enable-rubberband
         --enable-lcms2
         --prefix=${MINGW_INSTALL_PREFIX}
-    BUILD_COMMAND ${EXEC} <SOURCE_DIR>/waf
+        BUILD_COMMAND ${EXEC} <SOURCE_DIR>/waf --top=<SOURCE_DIR> --out=<BINARY_DIR>
     INSTALL_COMMAND ""
-    BUILD_IN_SOURCE 1
-    LOG_DOWNLOAD 1 LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
+    BUILD_IN_SOURCE 0 
+    LOG_UPDATE 1 LOG_CONFIGURE 1 LOG_BUILD 1 LOG_INSTALL 1
 )
 
-force_rebuild_git(mpv)
+#force_rebuild_git(mpv)
 
 ExternalProject_Add_Step(mpv bootstrap
-    DEPENDEES download
     DEPENDERS configure
     COMMAND <SOURCE_DIR>/bootstrap.py
     WORKING_DIRECTORY <SOURCE_DIR>
@@ -64,15 +67,15 @@ ExternalProject_Add_Step(mpv bootstrap
 
 ExternalProject_Add_Step(mpv strip-binary
     DEPENDEES build
-    COMMAND ${EXEC} ${TARGET_ARCH}-objcopy --only-keep-debug <SOURCE_DIR>/build/mpv.exe <SOURCE_DIR>/build/mpv.exe.debug
-    COMMAND ${EXEC} ${TARGET_ARCH}-strip -s <SOURCE_DIR>/build/mpv.exe
-    COMMAND ${EXEC} ${TARGET_ARCH}-objcopy --add-gnu-debuglink=<SOURCE_DIR>/build/mpv.exe.debug <SOURCE_DIR>/build/mpv.exe
+    COMMAND ${EXEC} ${TARGET_ARCH}-objcopy --only-keep-debug <BINARY_DIR>/mpv.exe <BINARY_DIR>/mpv.exe.debug
+    COMMAND ${EXEC} ${TARGET_ARCH}-strip -s <BINARY_DIR>/mpv.exe
+    COMMAND ${EXEC} ${TARGET_ARCH}-objcopy --add-gnu-debuglink=<BINARY_DIR>/mpv.exe.debug <BINARY_DIR>/mpv.exe
 
-    COMMAND ${EXEC} ${TARGET_ARCH}-strip -s <SOURCE_DIR>/build/mpv.com
+    COMMAND ${EXEC} ${TARGET_ARCH}-strip -s <BINARY_DIR>/mpv.com
 
-    COMMAND ${EXEC} ${TARGET_ARCH}-objcopy --only-keep-debug <SOURCE_DIR>/build/mpv-1.dll <SOURCE_DIR>/build/mpv-1.dll.debug
-    COMMAND ${EXEC} ${TARGET_ARCH}-strip -g <SOURCE_DIR>/build/mpv-1.dll
-    COMMAND ${EXEC} ${TARGET_ARCH}-objcopy --add-gnu-debuglink=<SOURCE_DIR>/build/mpv-1.dll.debug <SOURCE_DIR>/build/mpv-1.dll
+    COMMAND ${EXEC} ${TARGET_ARCH}-objcopy --only-keep-debug <BINARY_DIR>/mpv-1.dll <BINARY_DIR>/mpv-1.dll.debug
+    COMMAND ${EXEC} ${TARGET_ARCH}-strip -g <BINARY_DIR>/mpv-1.dll
+    COMMAND ${EXEC} ${TARGET_ARCH}-objcopy --add-gnu-debuglink=<BINARY_DIR>/mpv-1.dll.debug <BINARY_DIR>/mpv-1.dll
     COMMENT "Stripping mpv binaries"
 )
 
@@ -86,15 +89,15 @@ ExternalProject_Add_Step(mpv clean-package-dir
 
 ExternalProject_Add_Step(mpv copy-binary
     DEPENDEES strip-binary clean-package-dir
-    COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/build/mpv.exe ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/mpv.exe
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/mpv.exe ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/mpv.exe
 
-    COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/build/mpv.exe.debug ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/mpv.exe.debug
-    COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/build/mpv-1.dll ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/mpv-1.dll
-    COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/build/mpv-1.dll.debug ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/mpv-1.dll.debug
-    COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/build/libmpv.dll.a ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/libmpv.dll.a
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/mpv.exe.debug ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/mpv.exe.debug
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/mpv-1.dll ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/mpv-1.dll
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/mpv-1.dll.debug ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/mpv-1.dll.debug
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/libmpv.dll.a ${CMAKE_CURRENT_BINARY_DIR}/mpv-dev/libmpv.dll.a
 
-    COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/build/mpv.com ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/mpv.com
-    COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/build/DOCS/man/mpv.pdf ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/manual.pdf
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/mpv.com ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/mpv.com
+    #COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/DOCS/man/mpv.pdf ${CMAKE_CURRENT_BINARY_DIR}/mpv-package/manual.pdf
     COMMENT "Copying mpv binaries and manual"
 )
 

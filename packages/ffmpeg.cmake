@@ -22,7 +22,6 @@ ExternalProject_Add(ffmpeg
 #     GIT_REPOSITORY "git://source.ffmpeg.org/ffmpeg.git"
     GIT_REPOSITORY "git://github.com/FFmpeg/FFmpeg.git"
     UPDATE_COMMAND ""
-    PATCH_COMMAND ${EXEC} git am ${CMAKE_CURRENT_SOURCE_DIR}/ffmpeg-*.patch
     CONFIGURE_COMMAND ${EXEC} <SOURCE_DIR>/configure
     --cross-prefix=${TARGET_ARCH}-
     --prefix=${MINGW_INSTALL_PREFIX}
